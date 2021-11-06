@@ -1,5 +1,7 @@
 const main = async () => {
+  //Compile our contract
   const gameContractFactory = await hre.ethers.getContractFactory("MyEpicGame");
+  //Deploy our contract
   const gameContract = await gameContractFactory.deploy(
     ["Jack Black", "Jack White", "Samurai Jack"],
     ["https://imgur.com/gallery/ylOYBpT",
