@@ -2,18 +2,25 @@ const main = async () => {
   const gameContractFactory = await hre.ethers.getContractFactory("MyEpicGame");
   const gameContract = await gameContractFactory.deploy(
     ["Jack Black", "Jack White", "Samurai Jack"],
-    ["https://imgur.com/gallery/ylOYBpT",
-    "https://imgur.com/gallery/1r3XKWC",
-    "https://imgur.com/t/samurai_jack/uSZ9ckg"],
+    ["https://i.imgur.com/ylOYBpT.jpeg",
+    "https://i.imgur.com/PdXOYAL.jpeg",
+    "https://i.imgur.com/j4cFFc8.jpeg"],
     [350, 200, 100],
-    [100, 150, 225]
+    [100, 150, 225],
+    "Bojack Horseman",
+    "https://i.imgur.com/WMXJaDJ.jpeg",
+    5,
+    50
   );
-  //wait for the resolution of the deploy method
   await gameContract.deployed();
   console.log("Contract deployed to:", gameContract.address);
 
   let txn;
   txn = await gameContract.mintJackNFT(2);
+  await txn.wait();
+  txn = await gameContract.attackBoss();
+  await txn.wait();
+  txn = await gameContract.attackBoss();
   await txn.wait();
 
   let returnedTokenUri = await gameContract.tokenURI(1);

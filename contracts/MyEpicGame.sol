@@ -31,16 +31,42 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
 
   mapping(uint256 => CharAttrs) public nftHolderAttrs;
 
-  mapping(address => uint256) public nftHolders; //You could change the uint into an array, if you wanted the user to be able to mint multiple NFTs
+  struct Boss {
+    string name;
+    string imgURI;
+    uint hp;
+    uint maxHp;
+    uint attack;
+  }
+
+  Boss public boss;
+
+
+  mapping(address => uint256) public nftHolders;
 
   constructor(
     string[] memory charNames,
     string[] memory charImgURIs,
     uint256[] memory charHp,
-    uint256[] memory charAttack
+    uint256[] memory charAttack,
+    string memory bossName,
+    string memory bossImgURI,
+    uint bossHp,
+    uint bossAttack
   ) 
     ERC721("Jacks", "JACK")
   {
+
+    boss = Boss({
+      name: bossName,
+      imgURI: bossImgURI,
+      hp: bossHp,
+      maxHp: bossHp,
+      attack: bossAttack
+    });
+
+    console.log("Done initializing boss %s w/ HP %s, img %s", boss.name, boss.hp, boss.imgURI);
+
     for(uint i = 0; i < charNames.length; i += 1){
       defaultChars.push(CharAttrs({
         charInd: i,
@@ -104,6 +130,43 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     abi.encodePacked("data:application/json;base64,", json)
     );
   
-      return output;
+    return output;
+  }
+
+  function attackBoss() public {
+    // Get the state of the player's NFT.
+    uint256 playerToken = nftHolders[msg.sender];
+    CharAttrs storage player = nftHolderAttrs[playerToken];
+    console.log("\nPlayer w/ character %s about to attack. Has %s HP and %s AD", player.name, player.hp, player.attack);
+    console.log("Boss %s has %s HP and %s AD", boss.name, boss.hp, boss.attack);
+
+    // Make sure the player has more than 0 HP.
+    require (
+      player.hp > 0,
+      "Error: Your character is dead and cannot attack (RIP)."
+    ); 
+
+    // Make sure the boss has more than 0 HP.
+    require (
+      boss.hp > 0,
+      "Error: The boss has been defeated already. No sense beating a dead horse."
+    );
+
+    // Allow player to attack boss.
+    if (boss.hp < player.attack) {
+      boss.hp = 0; //uints can't be negative, so we need to manually handle that case
+    } else {
+      boss.hp = boss.hp - player.attack;
+    }
+
+    // Allow boss to attack player.
+    if (player.hp < boss.attack) {
+      player.hp = 0;
+    } else {
+      player.hp = player.hp - boss.attack;
+    }
+
+    console.log("Player attacked boss. New boss hp: %s", boss.hp);
+    console.log("Boss attacked player. New player hp: %s\n", player.hp);
   }
 }
