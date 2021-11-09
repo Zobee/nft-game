@@ -22,6 +22,8 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     uint256 hp;
     uint256 maxHp;
     uint256 attack;
+    uint256 defense;
+    string element;
   }
 
   using Counters for Counters.Counter;
@@ -51,6 +53,8 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     string[] memory charImgURIs,
     uint256[] memory charHp,
     uint256[] memory charAttack,
+    uint256[] memory charDefense,
+    string[] memory charElement,
     string memory bossName,
     string memory bossImgURI,
     uint bossHp,
@@ -76,7 +80,9 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
         imgURI: charImgURIs[i],
         hp: charHp[i],
         maxHp: charHp[i],
-        attack: charAttack[i]
+        attack: charAttack[i],
+        defense: charDefense[i],
+        element: charElement[i]
       }));
 
       CharAttrs memory c = defaultChars[i];
@@ -96,7 +102,9 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
       imgURI: defaultChars[_charInd].imgURI,
       hp: defaultChars[_charInd].hp,
       maxHp: defaultChars[_charInd].hp,
-      attack: defaultChars[_charInd].attack
+      attack: defaultChars[_charInd].attack,
+      defense: defaultChars[_charInd].defense,
+      element: defaultChars[_charInd].element
     });
 
     console.log("Minted NFT w/ tokenId %s and characterIndex %s", newItemId, _charInd);
@@ -105,7 +113,7 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
 
     _tokenIDs.increment();
 
-    emit CharacterNFTMinted(msg.sender, newItemId, _characterIndex);
+    emit CharNFTMinted(msg.sender, newItemId, _charInd);
   }
 
   function tokenURI(uint256 _tokenId) public view override returns (string memory){
@@ -114,18 +122,22 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     string memory strHp = Strings.toString(charAttrs.hp);
     string memory strMaxHp = Strings.toString(charAttrs.maxHp);
     string memory strAttack = Strings.toString(charAttrs.attack);
+    string memory strDefense = Strings.toString(charAttrs.defense);
 
     string memory json = Base64.encode(
       bytes(
         string(
           abi.encodePacked(
-            '{"name": "}',
+            '{"name": "',
             charAttrs.name,
             ' -- NFT #: ',
             Strings.toString(_tokenId),
-            "image: ",
+            '", "description": "This is an NFT that lets people play!", "image": "ipfs://',
             charAttrs.imgURI,
-            '", "attributes": [ { "trait_type": "Health Points", "value": ',strHp,', "max_value":',strMaxHp,'}, { "trait_type": "Attack Damage", "value": ',strAttack,'} ]}'
+            '", "attributes": [ { "trait_type": "Health Points", "value": ',strHp,', "max_value":',strMaxHp,'}, { "trait_type": "Attack Damage", "value": ',
+            strAttack,'}, { "trait_type": "Defense", "value": ',
+            strDefense,'}, { "trait_type": "Element", "value": ',
+            charAttrs.element,'} ]}'
           )
         )
       )
@@ -143,6 +155,7 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     CharAttrs storage player = nftHolderAttrs[playerToken];
     console.log("\nPlayer w/ character %s about to attack. Has %s HP and %s AD", player.name, player.hp, player.attack);
     console.log("Boss %s has %s HP and %s AD", boss.name, boss.hp, boss.attack);
+    uint256 bossDmg = boss.attack - player.defense;
 
     // Make sure the player has more than 0 HP.
     require (
@@ -164,10 +177,10 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     }
 
     // Allow boss to attack player.
-    if (player.hp < boss.attack) {
+    if (player.hp < bossDmg) {
       player.hp = 0;
     } else {
-      player.hp = player.hp - boss.attack;
+      player.hp = player.hp - bossDmg;
     }
 
     console.log("Player attacked boss. New boss hp: %s", boss.hp);
@@ -176,19 +189,22 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     emit AttackComplete(boss.hp, player.hp);
   }
 
-  function checkIfUserHasNFT() public view returns (CharacterAttributes memory) {
+  function checkIfUserHasNFT() public view returns (CharAttrs memory) {
     // Get the tokenId of the user's character NFT
-    uint256 playerToken = nftHolders[msg.sender];
+    uint256 playerTokenId = nftHolders[msg.sender];
     // If the user has a tokenId in the map, return their character.
-    if(playerToken > 0) {
-      return nftHolderAttrs[playerToken];
+    if(playerTokenId > 0) {
+      console.log("Player has NFT");
+      return nftHolderAttrs[playerTokenId];
       // Else, return an empty character.
     } else {
+      console.log("No NFT yet");
       CharAttrs memory emptyChar;
       return emptyChar;
     }
   }
-  function getDefaultChars() public view returns (CharacterAttributes[] memory) {
+
+  function getDefaultChars() public view returns (CharAttrs[] memory) {
     return defaultChars;
   }
 
