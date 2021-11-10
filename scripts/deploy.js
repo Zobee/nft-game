@@ -16,8 +16,8 @@ const main = async () => {
     [100, 150, 100, 200, 150, 400, 500, 100, 50],
     [2, 1, 5, 3, 2, 2, 1, 4, 6],
     ["Flora", "Fauna", "Bug", "Fire", "Water", "Etherial", "Electric", "Proteza", "Neo"],
-    "Bojack Horseman",
-    "https://i.imgur.com/WMXJaDJ.jpeg",
+    "Mega Mush",
+    "QmdBGMQorUzpmNmzC3WdYmyKjR5Yf2SADpVT3sueyEsFQn",
     100000,
     50
   );

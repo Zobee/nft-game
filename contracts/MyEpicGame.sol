@@ -43,6 +43,9 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
 
   Boss public boss;
 
+  uint256 private randSeed;
+  uint256 private CRIT_CHANCE = 90;
+
   mapping(address => uint256) public nftHolders;
 
   event CharNFTMinted(address sender, uint256 tokenId, uint256 charInd);
@@ -123,7 +126,6 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     string memory strMaxHp = Strings.toString(charAttrs.maxHp);
     string memory strAttack = Strings.toString(charAttrs.attack);
     string memory strDefense = Strings.toString(charAttrs.defense);
-
     string memory json = Base64.encode(
       bytes(
         string(
@@ -132,7 +134,7 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
             charAttrs.name,
             ' -- NFT #: ',
             Strings.toString(_tokenId),
-            '", "description": "This is an NFT that lets people play!", "image": "ipfs://',
+            '", "description": "A Jack Attack NFT", "image": "ipfs://',
             charAttrs.imgURI,
             '", "attributes": [ { "trait_type": "Health Points", "value": ',strHp,', "max_value":',strMaxHp,'}, { "trait_type": "Attack Damage", "value": ',
             strAttack,'}, { "trait_type": "Defense", "value": ',
@@ -142,11 +144,16 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
         )
       )
     );
+
     string memory output = string(
     abi.encodePacked("data:application/json;base64,", json)
     );
   
     return output;
+  }
+
+  function getRandNumber() private view returns (uint256) {
+    return (block.timestamp + block.difficulty) % 100;
   }
 
   function attackBoss() public {
@@ -155,7 +162,18 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     CharAttrs storage player = nftHolderAttrs[playerToken];
     console.log("\nPlayer w/ character %s about to attack. Has %s HP and %s AD", player.name, player.hp, player.attack);
     console.log("Boss %s has %s HP and %s AD", boss.name, boss.hp, boss.attack);
+
     uint256 bossDmg = boss.attack - player.defense;
+    uint256 playerDmg = player.attack;
+
+    // Calculate critical hit chance
+    randSeed = getRandNumber();
+    console.log(randSeed);
+
+    if (randSeed >= CRIT_CHANCE){
+      console.log("Critical Hit!");
+      playerDmg *= 2;
+    }
 
     // Make sure the player has more than 0 HP.
     require (
@@ -166,14 +184,14 @@ contract MyEpicGame is ERC721 { //ERC721 is the standard NFT contract. Our contr
     // Make sure the boss has more than 0 HP.
     require (
       boss.hp > 0,
-      "Error: The boss has been defeated already. No sense beating a dead horse."
+      "Error: The boss has been defeated already."
     );
 
     // Allow player to attack boss.
-    if (boss.hp < player.attack) {
+    if (boss.hp < playerDmg) {
       boss.hp = 0; //uints can't be negative, so we need to manually handle that case
     } else {
-      boss.hp = boss.hp - player.attack;
+      boss.hp = boss.hp - playerDmg;
     }
 
     // Allow boss to attack player.
